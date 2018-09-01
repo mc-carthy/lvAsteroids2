@@ -18,21 +18,27 @@ function love.update(dt)
         shipSpeedY = shipSpeedY + math.sin(shipRot) * shipSpeed * dt
     end
 
-    shipX = shipX + shipSpeedX * dt
-    shipY = shipY + shipSpeedY * dt
+    shipX = (shipX + shipSpeedX * dt) % love.graphics.getWidth()
+    shipY = (shipY + shipSpeedY * dt) % love.graphics.getHeight()
 end
 
 function love.draw()
-    love.graphics.setColor(0, 0, 1)
-    love.graphics.circle('fill', shipX, shipY, 30)
-    love.graphics.setColor(0, 1, 1)
-    local shipCircleDistance = 20
-    love.graphics.circle(
-        'fill',
-        shipX + math.cos(shipRot) * shipCircleDistance,
-        shipY + math.sin(shipRot) * shipCircleDistance,
-        5
-    )
+    for y = -1, 1 do
+        for x = -1, 1 do
+            love.graphics.origin()
+            love.graphics.translate(x * love.graphics.getWidth(), y * love.graphics.getHeight())
+            love.graphics.setColor(0, 0, 1)
+            love.graphics.circle('fill', shipX, shipY, 30)
+            love.graphics.setColor(0, 1, 1)
+            local shipCircleDistance = 20
+            love.graphics.circle(
+                'fill',
+                shipX + math.cos(shipRot) * shipCircleDistance,
+                shipY + math.sin(shipRot) * shipCircleDistance,
+                5
+            )
+        end
+    end
 end
 
 function love.keypressed(key)
