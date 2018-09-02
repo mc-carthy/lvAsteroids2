@@ -8,6 +8,8 @@ function love.load()
 
     bullets = {}
     bulletSpeed = 500
+    bulletLifetime = 4
+    bulletTimer = 0
 end
 
 function love.update(dt)
@@ -25,9 +27,30 @@ function love.update(dt)
     shipX = (shipX + shipSpeedX * dt) % love.graphics.getWidth()
     shipY = (shipY + shipSpeedY * dt) % love.graphics.getHeight()
 
-    for _, bullet in ipairs(bullets) do
-        bullet.x = (bullet.x + math.cos(bullet.rot) * bulletSpeed * dt) % love.graphics.getWidth()
-        bullet.y = (bullet.y + math.sin(bullet.rot) * bulletSpeed * dt) % love.graphics.getHeight()
+    for bulletIndex = #bullets, 1, -1 do
+        local bullet = bullets[bulletIndex]
+
+        bullet.timeLeft = bullet.timeLeft - dt
+
+        if bullet.timeLeft <= 0 then
+            table.remove(bullets, bulletIndex)
+        else
+            bullet.x = (bullet.x + math.cos(bullet.rot) * bulletSpeed * dt) % love.graphics.getWidth()
+            bullet.y = (bullet.y + math.sin(bullet.rot) * bulletSpeed * dt) % love.graphics.getHeight()
+        end
+    end
+
+    bulletTimer = bulletTimer + dt
+    if love.keyboard.isDown('s') then
+        if bulletTimer >= 0.5 then
+            bulletTimer = 0
+            table.insert(bullets, {
+                x = shipX + math.cos(shipRot) * shipRad,
+                y = shipY + math.sin(shipRot) * shipRad,
+                rot = shipRot,
+                timeLeft = bulletLifetime
+            })
+        end
     end
 end
 
@@ -58,13 +81,5 @@ end
 function love.keypressed(key)
     if key == 'escape' then
         love.event.quit()
-    end
-
-    if key == 's' then
-        table.insert(bullets, {
-            x = shipX + math.cos(shipRot) * shipRad,
-            y = shipY + math.sin(shipRot) * shipRad,
-            rot = shipRot
-        })
     end
 end
