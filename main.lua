@@ -1,18 +1,42 @@
 function love.load()
     screenWidth, screenHeight = love.graphics.getWidth(), love.graphics.getHeight()
-    shipX, shipY = screenWidth / 2, screenHeight / 2
-    shipRot = 0
-    shipSpeedX, shipSpeedY = 0, 0
     shipSpeed = 100
     shipRotSpeed = 10
     shipRad = 30
-
-    bullets = {}
+    
     bulletSpeed = 500
     bulletLifetime = 4
-    bulletTimer = 0
     bulletRad = 5
+    asteroidStages = {
+        {
+            speed = 120,
+            radius = 15
+        },
+        {
+            speed = 70,
+            radius = 30
+        },
+        {
+            speed = 50,
+            radius = 50
+        },
+        {
+            speed = 20,
+            radius = 80
+        }
+    }
 
+    reset()
+end
+
+function reset()
+    shipX, shipY = screenWidth / 2, screenHeight / 2
+    shipRot = 0
+    shipSpeedX, shipSpeedY = 0, 0
+    
+    bullets = {}
+    bulletTimer = 0
+    
     asteroids = {
         {
             x = 100,
@@ -27,10 +51,9 @@ function love.load()
             y = screenHeight - 100,
         }
     }
-    asteroidSpeed = 20
-    asteroidRad = 80
     for _, asteroid in ipairs(asteroids) do
         asteroid.rot = love.math.random() * (2 * math.pi)
+        asteroid.stage = #asteroidStages
     end
 end
 
@@ -65,9 +88,28 @@ function love.update(dt)
             local asteroid = asteroids[asteroidIndex]
             if circleCollision(
                 { x = bullet.x, y = bullet.y, rad = bulletRad }, 
-                { x = asteroid.x, y = asteroid.y, rad = asteroidRad }
+                { x = asteroid.x, y = asteroid.y, rad = asteroidStages[asteroid.stage].radius }
             ) then
                 table.remove(bullets, bulletIndex)
+
+                if asteroid.stage > 1 then
+                    local angle1 = love.math.random() * (2 * math.pi)
+                    local angle2 = (angle1 - math.pi) % (2 * math.pi)
+
+                    table.insert(asteroids, {
+                        x = asteroid.x,
+                        y = asteroid.y,
+                        rot = angle1,
+                        stage = asteroid.stage - 1
+                    })
+                    table.insert(asteroids, {
+                        x = asteroid.x,
+                        y = asteroid.y,
+                        rot = angle2,
+                        stage = asteroid.stage - 1
+                    })
+                end
+
                 table.remove(asteroids, asteroidIndex)
                 break
             end
@@ -89,18 +131,21 @@ function love.update(dt)
 
     for asteroidIndex = #asteroids, 1, -1 do
         local asteroid = asteroids[asteroidIndex]
-        asteroid.x = (asteroid.x + math.cos(asteroid.rot) * asteroidSpeed * dt) % screenWidth
-        asteroid.y = (asteroid.y + math.sin(asteroid.rot) * asteroidSpeed * dt) % screenHeight
+        asteroid.x = (asteroid.x + math.cos(asteroid.rot) * asteroidStages[asteroid.stage].speed * dt) % screenWidth
+        asteroid.y = (asteroid.y + math.sin(asteroid.rot) * asteroidStages[asteroid.stage].speed * dt) % screenHeight
 
         if circleCollision(
-            { x = asteroid.x, y = asteroid.y, rad = asteroidRad }, 
+            { x = asteroid.x, y = asteroid.y, rad = asteroidStages[asteroid.stage].radius }, 
             { x = shipX, y = shipY, rad = shipRad }
         ) then
-            love.load()
+            reset()
             break
         end
     end
 
+    if #asteroids <= 0 then
+        reset()
+    end
 end
 
 function love.draw()
@@ -126,7 +171,7 @@ function love.draw()
 
             for _, asteroid in ipairs(asteroids) do
                 love.graphics.setColor(1, 1, 0)
-                love.graphics.circle('fill', asteroid.x, asteroid.y, asteroidRad)
+                love.graphics.circle('fill', asteroid.x, asteroid.y, asteroidStages[asteroid.stage].radius)
             end
         end
     end
