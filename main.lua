@@ -1,5 +1,6 @@
 function love.load()
-    shipX, shipY = love.graphics.getWidth() / 2, love.graphics.getHeight() / 2
+    screenWidth, screenHeight = love.graphics.getWidth(), love.graphics.getHeight()
+    shipX, shipY = screenWidth / 2, screenHeight / 2
     shipRot = 0
     shipSpeedX, shipSpeedY = 0, 0
     shipSpeed = 100
@@ -10,6 +11,26 @@ function love.load()
     bulletSpeed = 500
     bulletLifetime = 4
     bulletTimer = 0
+
+    asteroids = {
+        {
+            x = 100,
+            y = 100,
+        },
+        {
+            x = screenWidth - 100,
+            y = 100,
+        },
+        {
+            x = screenWidth / 2,
+            y = screenHeight - 100,
+        }
+    }
+    asteroidSpeed = 20
+    asteroidRad = 80
+    for _, asteroid in ipairs(asteroids) do
+        asteroid.rot = love.math.random() * (2 * math.pi)
+    end
 end
 
 function love.update(dt)
@@ -24,8 +45,8 @@ function love.update(dt)
         shipSpeedY = shipSpeedY + math.sin(shipRot) * shipSpeed * dt
     end
 
-    shipX = (shipX + shipSpeedX * dt) % love.graphics.getWidth()
-    shipY = (shipY + shipSpeedY * dt) % love.graphics.getHeight()
+    shipX = (shipX + shipSpeedX * dt) % screenWidth
+    shipY = (shipY + shipSpeedY * dt) % screenHeight
 
     for bulletIndex = #bullets, 1, -1 do
         local bullet = bullets[bulletIndex]
@@ -35,8 +56,8 @@ function love.update(dt)
         if bullet.timeLeft <= 0 then
             table.remove(bullets, bulletIndex)
         else
-            bullet.x = (bullet.x + math.cos(bullet.rot) * bulletSpeed * dt) % love.graphics.getWidth()
-            bullet.y = (bullet.y + math.sin(bullet.rot) * bulletSpeed * dt) % love.graphics.getHeight()
+            bullet.x = (bullet.x + math.cos(bullet.rot) * bulletSpeed * dt) % screenWidth
+            bullet.y = (bullet.y + math.sin(bullet.rot) * bulletSpeed * dt) % screenHeight
         end
     end
 
@@ -52,13 +73,27 @@ function love.update(dt)
             })
         end
     end
+
+    for _, asteroid in ipairs(asteroids) do
+        asteroid.x = (asteroid.x + math.cos(asteroid.rot) * asteroidSpeed * dt) % screenWidth
+        asteroid.y = (asteroid.y + math.sin(asteroid.rot) * asteroidSpeed * dt) % screenHeight
+
+        if circleCollision(
+            { x = asteroid.x, y = asteroid.y, rad = asteroidRad }, 
+            { x = shipX, y = shipY, rad = shipRad }
+        ) then
+            love.load()
+            break
+        end
+    end
+
 end
 
 function love.draw()
     for y = -1, 1 do
         for x = -1, 1 do
             love.graphics.origin()
-            love.graphics.translate(x * love.graphics.getWidth(), y * love.graphics.getHeight())
+            love.graphics.translate(x * screenWidth, y * screenHeight)
             love.graphics.setColor(0, 0, 1)
             love.graphics.circle('fill', shipX, shipY, shipRad)
             love.graphics.setColor(0, 1, 1)
@@ -74,6 +109,11 @@ function love.draw()
                 love.graphics.setColor(0, 1, 0)
                 love.graphics.circle('fill', bullet.x, bullet.y, 5)
             end
+
+            for _, asteroid in ipairs(asteroids) do
+                love.graphics.setColor(1, 1, 0)
+                love.graphics.circle('fill', asteroid.x, asteroid.y, asteroidRad)
+            end
         end
     end
 end
@@ -82,4 +122,8 @@ function love.keypressed(key)
     if key == 'escape' then
         love.event.quit()
     end
+end
+
+function circleCollision(a, b)
+    return (a.x - b.x)^2 + (a.y - b.y)^2 <= (a.rad + b.rad)^2
 end
