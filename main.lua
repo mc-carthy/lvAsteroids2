@@ -4,6 +4,10 @@ function love.load()
     shipSpeedX, shipSpeedY = 0, 0
     shipSpeed = 100
     shipRotSpeed = 10
+    shipRad = 30
+
+    bullets = {}
+    bulletSpeed = 500
 end
 
 function love.update(dt)
@@ -20,6 +24,11 @@ function love.update(dt)
 
     shipX = (shipX + shipSpeedX * dt) % love.graphics.getWidth()
     shipY = (shipY + shipSpeedY * dt) % love.graphics.getHeight()
+
+    for _, bullet in ipairs(bullets) do
+        bullet.x = (bullet.x + math.cos(bullet.rot) * bulletSpeed * dt) % love.graphics.getWidth()
+        bullet.y = (bullet.y + math.sin(bullet.rot) * bulletSpeed * dt) % love.graphics.getHeight()
+    end
 end
 
 function love.draw()
@@ -28,7 +37,7 @@ function love.draw()
             love.graphics.origin()
             love.graphics.translate(x * love.graphics.getWidth(), y * love.graphics.getHeight())
             love.graphics.setColor(0, 0, 1)
-            love.graphics.circle('fill', shipX, shipY, 30)
+            love.graphics.circle('fill', shipX, shipY, shipRad)
             love.graphics.setColor(0, 1, 1)
             local shipCircleDistance = 20
             love.graphics.circle(
@@ -37,6 +46,11 @@ function love.draw()
                 shipY + math.sin(shipRot) * shipCircleDistance,
                 5
             )
+
+            for _, bullet in ipairs(bullets) do
+                love.graphics.setColor(0, 1, 0)
+                love.graphics.circle('fill', bullet.x, bullet.y, 5)
+            end
         end
     end
 end
@@ -44,5 +58,13 @@ end
 function love.keypressed(key)
     if key == 'escape' then
         love.event.quit()
+    end
+
+    if key == 's' then
+        table.insert(bullets, {
+            x = shipX + math.cos(shipRot) * shipRad,
+            y = shipY + math.sin(shipRot) * shipRad,
+            rot = shipRot
+        })
     end
 end
