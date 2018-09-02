@@ -11,6 +11,7 @@ function love.load()
     bulletSpeed = 500
     bulletLifetime = 4
     bulletTimer = 0
+    bulletRad = 5
 
     asteroids = {
         {
@@ -59,6 +60,18 @@ function love.update(dt)
             bullet.x = (bullet.x + math.cos(bullet.rot) * bulletSpeed * dt) % screenWidth
             bullet.y = (bullet.y + math.sin(bullet.rot) * bulletSpeed * dt) % screenHeight
         end
+
+        for asteroidIndex = #asteroids, 1, -1 do
+            local asteroid = asteroids[asteroidIndex]
+            if circleCollision(
+                { x = bullet.x, y = bullet.y, rad = bulletRad }, 
+                { x = asteroid.x, y = asteroid.y, rad = asteroidRad }
+            ) then
+                table.remove(bullets, bulletIndex)
+                table.remove(asteroids, asteroidIndex)
+                break
+            end
+        end
     end
 
     bulletTimer = bulletTimer + dt
@@ -74,7 +87,8 @@ function love.update(dt)
         end
     end
 
-    for _, asteroid in ipairs(asteroids) do
+    for asteroidIndex = #asteroids, 1, -1 do
+        local asteroid = asteroids[asteroidIndex]
         asteroid.x = (asteroid.x + math.cos(asteroid.rot) * asteroidSpeed * dt) % screenWidth
         asteroid.y = (asteroid.y + math.sin(asteroid.rot) * asteroidSpeed * dt) % screenHeight
 
@@ -107,7 +121,7 @@ function love.draw()
 
             for _, bullet in ipairs(bullets) do
                 love.graphics.setColor(0, 1, 0)
-                love.graphics.circle('fill', bullet.x, bullet.y, 5)
+                love.graphics.circle('fill', bullet.x, bullet.y, bulletRad)
             end
 
             for _, asteroid in ipairs(asteroids) do
